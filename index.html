@@ -24,7 +24,7 @@
     <div class="eyebrow"><span></span> لعبة تخمين عربية</div>
     <h1 id="title">حزر <em>الكلمة</em></h1>
     <p class="lead">خمّن كلمة من خمسة حروف خلال ست محاولات.</p>
-    <div class="legend" aria-label="معاني رموز الحروف">
+    <div class="legend" role="group" aria-label="معاني رموز الحروف">
       <div><span class="sample exact" aria-hidden="true">✓</span> حرف صحيح في مكانه</div>
       <div><span class="sample present" aria-hidden="true">↔</span> حرف صحيح في مكان آخر</div>
       <div><span class="sample absent" aria-hidden="true">×</span> حرف غير موجود أو استُخدم بالفعل</div>
@@ -33,7 +33,7 @@
   </section>
   <section class="arena" aria-labelledby="play-title">
     <div class="arena-head"><h2 id="play-title">لوحة اللعب</h2><span id="attempt" class="attempt"></span></div>
-    <ol id="board" class="board" aria-label="محاولات التخمين"></ol>
+    <ol id="board" class="board" role="list" aria-label="محاولات التخمين"></ol>
     <form id="form" autocomplete="off">
       <label for="guess">تخمينك</label>
       <div class="entry">
