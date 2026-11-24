@@ -17,6 +17,10 @@
 body { margin: 0; background: var(--paper); color: var(--ink); line-height: 1.55; }
 button, input { font: inherit; }
 button { cursor: pointer; }
+button, .entry input { touch-action: manipulation; }
+.top-actions { display: flex; flex-wrap: wrap; gap: .3rem; }
+.preference { display: flex; align-items: center; gap: .5rem; margin-block-start: .5rem; }
+.preference input { width: 1.2rem; min-height: 1.2rem; accent-color: var(--accent); }
 button, input { min-height: 2.75rem; border-radius: 3px; }
 button { padding: .34rem .75rem; font-weight: 700; }
 button[aria-disabled="true"] { cursor: default; }

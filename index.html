@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#f6f1e6">
 <meta name="description" content="حزر الكلمة، لعبة تخمين عربية. اكتشف الكلمة في ست محاولات والعب جولة جديدة متى شئت.">
 <title>حزر الكلمة | لعبة تخمين عربية</title>
@@ -14,7 +14,10 @@
 <a class="skip" href="#guess">انتقل إلى إدخال التخمين</a>
 <header class="top">
   <h1><span aria-hidden="true">ح</span> حزر الكلمة</h1>
-  <button id="help" class="quiet" type="button">طريقة اللعب</button>
+  <div class="top-actions">
+    <button id="settings" class="quiet" type="button">الإعدادات</button>
+    <button id="help" class="quiet" type="button">طريقة اللعب</button>
+  </div>
 </header>
 <main class="arena">
   <section class="playboard" aria-label="لوحة اللعب">
@@ -58,6 +61,12 @@
   </ul>
   <p>تظهر فئة الكلمة بعد محاولتين. زر «مساعدة حرف» يكشف حرفًا وموقعه مرة واحدة في الجولة. إذا استسلمت أو انتهت محاولاتك، يظهر الحل ويمكنك بدء جولة جديدة.</p>
   <form method="dialog"><button class="primary" autofocus>إغلاق</button></form>
+</dialog>
+<dialog id="preferences" aria-labelledby="preferences-title">
+  <h2 id="preferences-title">الإعدادات</h2>
+  <label class="preference"><input id="game-keyboard-only" type="checkbox"> كيبورد اللعبة فقط</label>
+  <p>يمنع فتح لوحة مفاتيح الجوال عند لمس خانة التخمين.</p>
+  <form method="dialog"><button class="primary">تم</button></form>
 </dialog>
 <dialog id="confirm" aria-labelledby="confirm-title">
   <h2 id="confirm-title"></h2><p id="confirm-text"></p>

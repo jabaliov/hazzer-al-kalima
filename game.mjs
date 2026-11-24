@@ -9,6 +9,8 @@ const reveal = byId('reveal');
 const surrender = byId('surrender');
 const help = byId('rules');
 const confirm = byId('confirm');
+const preferences = byId('preferences');
+const keyboardOnly = byId('game-keyboard-only');
 const symbols = { exact: '✓', present: '↔', absent: '×' };
 const labels = {
   exact: 'في مكانه الصحيح',
@@ -113,7 +115,8 @@ function refresh() {
     key.setAttribute('aria-label', outcome ? letter + '، ' + labels[outcome] : letter);
     key.setAttribute('aria-disabled', String(finished));
   }
-  input.readOnly = finished;
+  input.readOnly = finished || keyboardOnly.checked;
+  input.inputMode = keyboardOnly.checked ? 'none' : 'text';
   byId('erase').setAttribute('aria-disabled', String(finished || !input.value));
   submit.setAttribute('aria-disabled', String(!dictionary || finished));
   byId('attempt').textContent = finished ? 'انتهت الجولة'
@@ -160,7 +163,7 @@ byId('form').addEventListener('submit', event => {
     input.setAttribute('aria-invalid', 'true');
     status.classList.remove('sr-only');
     status.textContent = message;
-    input.focus();
+    if (!keyboardOnly.checked) input.focus();
     return;
   }
   input.removeAttribute('aria-invalid');
@@ -176,7 +179,7 @@ byId('form').addEventListener('submit', event => {
   const detail = [...word].map((letter, col) => letter + ' ' + labels[result[col]]).join('، ');
   status.textContent = detail + (guesses.length === 2 ? '، فئة الكلمة ' + category + '.' : '.');
   status.classList.add('sr-only');
-  input.focus();
+  if (!keyboardOnly.checked) input.focus();
 });
 
 function finishRound(label) {
@@ -218,6 +221,13 @@ function ask(action, title, text, button) {
   confirm.showModal();
 }
 
+try { keyboardOnly.checked = localStorage.getItem('hazzer-game-keyboard-only') === '1'; } catch {}
+keyboardOnly.addEventListener('change', () => {
+  try { localStorage.setItem('hazzer-game-keyboard-only', keyboardOnly.checked ? '1' : '0'); } catch {}
+  refresh();
+});
+byId('settings').addEventListener('click', () => preferences.showModal());
+
 byId('help').addEventListener('click', () => help.showModal());
 surrender.addEventListener('click', () => {
   if (!finished) ask('surrender', 'الاستسلام؟', 'ستنتهي الجولة وتظهر الكلمة.', 'استسلمت');
@@ -228,13 +238,13 @@ byId('reset').addEventListener('click', () => {
     return;
   }
   newRound();
-  input.focus();
+  if (!keyboardOnly.checked) input.focus();
 });
 confirm.addEventListener('close', () => {
   if (confirm.returnValue === 'surrender') finishRound('الكلمة هي');
   if (confirm.returnValue === 'restart') {
     newRound();
-    input.focus();
+    if (!keyboardOnly.checked) input.focus();
   }
 });
 
