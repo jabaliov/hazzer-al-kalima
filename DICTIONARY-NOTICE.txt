@@ -1,0 +1,8 @@
+أثر الكلمة — مصدر قاموس التخمين
+
+أُعدّت القائمة الموسّعة من AyaSpell (hunspell-ar) لطه زروقي ومحمد الكبداني، كما يوزّعه مستودع LibreOffice Dictionaries. تضم القائمة الأصلية للمشروع وكلمات AyaSpell وصيغًا مشتقة من قواعده، بعد الاقتصار على خمسة حروف وإزالة التشكيل وتوحيد أشكال الألف وحذف التكرار.
+
+قائمة AyaSpell المشتقة متاحة بموجب Mozilla Public License 2.0.
+https://www.mozilla.org/MPL/2.0/
+https://github.com/linuxscout/ayaspell
+https://github.com/LibreOffice/dictionaries/tree/951bb429a4d846699b02e7adb4fc6fca128c6bae/ar
