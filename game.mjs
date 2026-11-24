@@ -66,7 +66,7 @@ for (const row of keyboardRows) {
     erase.type = 'button';
     erase.id = 'erase';
     erase.className = 'key';
-    erase.textContent = '⌫';
+    erase.textContent = '⌫ حذف حرف';
     erase.setAttribute('aria-label', 'حذف حرف');
     erase.addEventListener('click', () => {
       if (finished || !input.value) return;
@@ -125,7 +125,7 @@ function refresh() {
   surrender.setAttribute('aria-disabled', String(finished));
   const category = byId('category');
   category.hidden = guesses.length < 2;
-  category.textContent = category.hidden ? '' : answers[answerIndex][1];
+  category.textContent = category.hidden ? '' : 'تلميح الفئة: ' + answers[answerIndex][1];
 }
 
 function newRound() {
@@ -138,6 +138,7 @@ function newRound() {
   revealedIndex = -1;
   byId('hint').hidden = true;
   byId('result').hidden = true;
+  byId('reset').hidden = false;
   input.removeAttribute('aria-invalid');
   status.textContent = dictionary ? '' : 'جارٍ تحميل القاموس…';
   refresh();
@@ -190,10 +191,11 @@ function finishRound(label) {
   byId('result-label').textContent = label;
   byId('answer').textContent = answer;
   byId('result').hidden = false;
+  byId('reset').hidden = true;
   status.textContent = label + ' «' + answer + '».';
   status.classList.add('sr-only');
   refresh();
-  byId('reset').focus();
+  byId('next-round').focus();
 }
 
 reveal.addEventListener('click', () => {
@@ -203,7 +205,7 @@ reveal.addEventListener('click', () => {
     .filter(index => !guesses.some(guess => guess.result[index] === 'exact'));
   const choices = unknown.length ? unknown : [...answer].map((_, index) => index);
   revealedIndex = choices[Math.floor(Math.random() * choices.length)];
-  const clue = 'الخانة ' + numbers.format(revealedIndex + 1) + ' من اليمين: «' + answer[revealedIndex] + '»';
+  const clue = 'الحرف المكشوف — الخانة ' + numbers.format(revealedIndex + 1) + ' من اليمين: «' + answer[revealedIndex] + '»';
   byId('hint').textContent = clue;
   byId('hint').hidden = false;
   status.textContent = clue;
@@ -232,6 +234,13 @@ byId('help').addEventListener('click', () => help.showModal());
 surrender.addEventListener('click', () => {
   if (!finished) ask('surrender', 'الاستسلام؟', 'ستنتهي الجولة وتظهر الكلمة.', 'استسلمت');
 });
+byId('next-round').addEventListener('click', () => {
+  newRound();
+  status.textContent = 'بدأت الجولة الجديدة.';
+  status.classList.add('sr-only');
+  if (keyboardOnly.checked) keys.get('ذ').focus();
+  else input.focus();
+});
 byId('reset').addEventListener('click', () => {
   if (!finished && (guesses.length || input.value || revealedIndex >= 0)) {
     ask('restart', 'بدء جولة جديدة؟', 'ستُمسح تخمينات هذه الجولة.', 'ابدأ جولة جديدة');
@@ -250,12 +259,16 @@ confirm.addEventListener('close', () => {
 
 help.addEventListener('close', () => {
   try { sessionStorage.setItem('hazzer-rules-seen', '1'); } catch {}
+  help.querySelector('button').textContent = 'إغلاق';
   byId('help').focus();
 });
 
 function showIntro() {
   try {
-    if (sessionStorage.getItem('hazzer-rules-seen')) return;
+    if (sessionStorage.getItem('hazzer-rules-seen')) {
+      help.querySelector('button').textContent = 'إغلاق';
+      return;
+    }
   } catch {}
   help.showModal();
 }
