@@ -3,11 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#101219">
+<meta name="theme-color" content="#f6f1e6">
 <meta name="description" content="حزر الكلمة، لعبة تخمين عربية. اكتشف الكلمة في ست محاولات والعب جولة جديدة متى شئت.">
-<meta property="og:title" content="حزر الكلمة">
-<meta property="og:description" content="خمّن كلمة عربية من خمسة حروف خلال ست محاولات.">
-<meta property="og:image" content="https://jabaliov.github.io/hazzer-al-kalima/cover.jpg">
 <title>حزر الكلمة | لعبة تخمين عربية</title>
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="./style.css">
@@ -15,49 +12,59 @@
 </head>
 <body>
 <a class="skip" href="#guess">انتقل إلى إدخال التخمين</a>
-<header class="top"><div class="bar">
-<a class="brand" href="./" aria-label="حزر الكلمة، الصفحة الرئيسية"><span class="brand-icon" aria-hidden="true">ح</span> حزر الكلمة</a>
-<button id="help" class="quiet" type="button"><span aria-hidden="true">؟</span> طريقة اللعب</button>
-</div></header>
-<main class="layout">
-  <section class="intro" aria-labelledby="title">
-    <div class="eyebrow"><span></span> لعبة تخمين عربية</div>
-    <h1 id="title">حزر <em>الكلمة</em></h1>
-    <p class="lead">خمّن كلمة من خمسة حروف خلال ست محاولات.</p>
-    <div class="legend" role="group" aria-label="معاني رموز الحروف">
-      <div><span class="sample exact" aria-hidden="true">✓</span> حرف صحيح في مكانه</div>
-      <div><span class="sample present" aria-hidden="true">↔</span> حرف صحيح في مكان آخر</div>
-      <div><span class="sample absent" aria-hidden="true">×</span> حرف غير موجود أو استُخدم بالفعل</div>
-    </div>
-    <div class="hint"><span aria-hidden="true">✦</span><div><strong>تلميح الجولة</strong><p id="hint">تظهر فئة الكلمة بعد محاولتين.</p></div></div>
-  </section>
-  <section class="arena" aria-labelledby="play-title">
-    <div class="arena-head"><h2 id="play-title">لوحة اللعب</h2><span id="attempt" class="attempt"></span></div>
+<header class="top">
+  <h1><span aria-hidden="true">ح</span> حزر الكلمة</h1>
+  <button id="help" class="quiet" type="button">طريقة اللعب</button>
+</header>
+<main class="arena">
+  <section class="playboard" aria-label="لوحة اللعب">
+    <div class="board-head"><span id="attempt"></span><span id="category" hidden></span></div>
     <ol id="board" class="board" role="list" aria-label="محاولات التخمين"></ol>
+    <p id="hint" class="hint" hidden></p>
+    <div id="result" class="result" hidden>
+      <p id="result-label"></p><strong id="answer"></strong>
+    </div>
+  </section>
+  <section class="controls" aria-label="أدوات اللعب">
     <form id="form" autocomplete="off">
-      <label for="guess">تخمينك</label>
+      <label class="sr-only" for="guess">تخمينك</label>
       <div class="entry">
-        <input id="guess" name="guess" type="text" dir="rtl" autocomplete="off" spellcheck="false" aria-describedby="status" placeholder="اكتب خمسة حروف">
-        <button id="submit" type="submit" aria-disabled="true">تحقّق</button>
+        <input id="guess" name="guess" type="text" autocomplete="off" spellcheck="false" aria-describedby="status" placeholder="اكتب تخمينك">
+        <button id="submit" class="primary" type="submit" aria-disabled="true">تحقّق</button>
       </div>
     </form>
-    <p id="status" role="status">جارٍ تحميل القاموس…</p>
-    <div id="keys" class="keyboard" role="group" aria-label="لوحة المفاتيح العربية"></div>
-    <div class="round-actions"><button id="erase" class="quiet" type="button"><span aria-hidden="true">⌫</span> حذف حرف</button><button id="reset" class="quiet" type="button"><span aria-hidden="true">↻</span> جولة جديدة</button></div>
+    <p id="status" role="status"></p>
+    <div id="keys" class="keyboard" dir="ltr" role="group" aria-label="لوحة المفاتيح العربية"></div>
+    <div class="round-actions">
+      <button id="reveal" class="quiet" type="button">مساعدة حرف</button>
+      <button id="surrender" class="quiet danger" type="button">استسلمت</button>
+      <button id="reset" class="quiet" type="button">جولة جديدة</button>
+    </div>
     <noscript>فعّل JavaScript في متصفحك لتشغيل اللعبة.</noscript>
   </section>
 </main>
-<footer><a href="https://scratch.mit.edu/projects/1444047731/">النسخة الأصلية على Scratch</a><span>حزر الكلمة</span></footer>
 <dialog id="rules" aria-labelledby="rules-title">
   <h2 id="rules-title">طريقة اللعب</h2>
-  <p>اكتب كلمة عربية من خمسة حروف أو استخدم لوحة المفاتيح على الشاشة، ثم اضغط «تحقّق» أو Enter.</p>
-  <ul><li>✓ الحرف في مكانه الصحيح.</li><li>↔ الحرف في الكلمة وفي مكان آخر.</li><li>× الحرف غير موجود أو استُخدم بالفعل.</li></ul>
-  <p>تظهر فئة الكلمة بعد محاولتين. تُقبل أشكال الألف «أ، إ، آ» بصيغة «ا».</p>
+  <p>اكتشف الكلمة المخفية. هي من خمسة حروف ولديك ست محاولات.</p>
+  <ol class="instructions">
+    <li>اكتب كلمة عربية بلوحة مفاتيح جهازك أو اضغط الحروف على الشاشة. تُكتب «أ، إ، آ» بصيغة «ا».</li>
+    <li>اضغط «تحقّق» أو Enter. التخمين خارج القاموس لا يستهلك محاولة.</li>
+    <li>استخدم نتائج الحروف لتحسين تخمينك التالي:</li>
+  </ol>
+  <ul class="legend">
+    <li><span class="sample exact" aria-hidden="true">✓</span> الحرف صحيح وفي مكانه.</li>
+    <li><span class="sample present" aria-hidden="true">↔</span> الحرف صحيح وفي مكان آخر.</li>
+    <li><span class="sample absent" aria-hidden="true">×</span> الحرف غير موجود أو استُخدم العدد المتاح منه.</li>
+  </ul>
+  <p>تظهر فئة الكلمة بعد محاولتين. زر «مساعدة حرف» يكشف حرفًا وموقعه مرة واحدة في الجولة. إذا استسلمت أو انتهت محاولاتك، يظهر الحل ويمكنك بدء جولة جديدة.</p>
   <form method="dialog"><button class="primary" autofocus>إغلاق</button></form>
 </dialog>
-<dialog id="restart" aria-labelledby="restart-title">
-  <h2 id="restart-title">بدء جولة جديدة؟</h2><p>ستبدأ بكلمة جديدة وتُمسح تخمينات هذه الجولة.</p>
-  <form method="dialog" class="dialog-actions"><button class="quiet" value="cancel" autofocus>متابعة الجولة</button><button class="primary" value="restart">ابدأ جولة جديدة</button></form>
+<dialog id="confirm" aria-labelledby="confirm-title">
+  <h2 id="confirm-title"></h2><p id="confirm-text"></p>
+  <form method="dialog" class="dialog-actions">
+    <button class="quiet" value="cancel" autofocus>متابعة الجولة</button>
+    <button id="confirm-action" class="primary"></button>
+  </form>
 </dialog>
 </body>
 </html>

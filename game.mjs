@@ -5,9 +5,10 @@ const byId = id => document.getElementById(id);
 const input = byId('guess');
 const status = byId('status');
 const submit = byId('submit');
-const erase = byId('erase');
+const reveal = byId('reveal');
+const surrender = byId('surrender');
 const help = byId('rules');
-const restart = byId('restart');
+const confirm = byId('confirm');
 const symbols = { exact: '✓', present: '↔', absent: '×' };
 const labels = {
   exact: 'في مكانه الصحيح',
@@ -22,6 +23,8 @@ let answerIndex = -1;
 let guesses = [];
 let dictionary;
 let finished = false;
+let revealedIndex = -1;
+const keyboardRows = ['ذ', 'ض ص ث ق ف غ ع ه خ ح ج د', 'ش س ي ب ل ا ت ن م ك ط', 'ئ ء ؤ ر لا ى ة و ز ظ'];
 
 for (let row = 0; row < 6; row++) {
   const item = document.createElement('li');
@@ -40,21 +43,36 @@ for (let row = 0; row < 6; row++) {
   cells.push({ item, slots, text });
 }
 
-for (let row = 0; row < 3; row++) {
+for (const row of keyboardRows) {
   const line = document.createElement('div');
   line.className = 'key-row';
-  for (const letter of alphabet.slice(row * 11, row * 11 + 11)) {
+  for (const letter of row.split(' ')) {
     const key = document.createElement('button');
     key.type = 'button';
     key.className = 'key';
     key.addEventListener('click', () => {
-      if (finished || input.value.length === 5) return;
+      if (finished || input.value.length + letter.length > 5) return;
       input.value += letter;
       input.removeAttribute('aria-invalid');
       refresh();
     });
     keys.set(letter, key);
     line.append(key);
+  }
+  if (row === 'ذ') {
+    const erase = document.createElement('button');
+    erase.type = 'button';
+    erase.id = 'erase';
+    erase.className = 'key';
+    erase.textContent = '⌫';
+    erase.setAttribute('aria-label', 'حذف حرف');
+    erase.addEventListener('click', () => {
+      if (finished || !input.value) return;
+      input.value = input.value.slice(0, -1);
+      input.removeAttribute('aria-invalid');
+      refresh();
+    });
+    line.append(erase);
   }
   byId('keys').append(line);
 }
@@ -96,12 +114,15 @@ function refresh() {
     key.setAttribute('aria-disabled', String(finished));
   }
   input.readOnly = finished;
-  erase.setAttribute('aria-disabled', String(finished || !input.value));
+  byId('erase').setAttribute('aria-disabled', String(finished || !input.value));
   submit.setAttribute('aria-disabled', String(!dictionary || finished));
   byId('attempt').textContent = finished ? 'انتهت الجولة'
     : 'المحاولة ' + numbers.format(guesses.length + 1) + ' من ٦';
-  byId('hint').textContent = guesses.length >= 2 || finished
-    ? answers[answerIndex][1] : 'تظهر فئة الكلمة بعد محاولتين.';
+  reveal.setAttribute('aria-disabled', String(finished || revealedIndex >= 0));
+  surrender.setAttribute('aria-disabled', String(finished));
+  const category = byId('category');
+  category.hidden = guesses.length < 2;
+  category.textContent = category.hidden ? '' : answers[answerIndex][1];
 }
 
 function newRound() {
@@ -111,8 +132,11 @@ function newRound() {
   guesses = [];
   input.value = '';
   finished = false;
+  revealedIndex = -1;
+  byId('hint').hidden = true;
+  byId('result').hidden = true;
   input.removeAttribute('aria-invalid');
-  status.textContent = dictionary ? 'أدخل تخمينك الأول.' : 'جارٍ تحميل القاموس…';
+  status.textContent = dictionary ? '' : 'جارٍ تحميل القاموس…';
   refresh();
 }
 
@@ -134,6 +158,7 @@ byId('form').addEventListener('submit', event => {
   if (word.length !== 5 || !dictionaryHas(dictionary, word)) {
     const message = word.length !== 5 ? 'أدخل خمسة حروف.' : 'هذه الكلمة غير موجودة في القاموس.';
     input.setAttribute('aria-invalid', 'true');
+    status.classList.remove('sr-only');
     status.textContent = message;
     input.focus();
     return;
@@ -143,41 +168,92 @@ byId('form').addEventListener('submit', event => {
   const result = score(word, answer);
   guesses.push({ word, result });
   input.value = '';
-  finished = word === answer || guesses.length === 6;
+  if (word === answer || guesses.length === 6) {
+    finishRound(word === answer ? 'أحسنت! الكلمة هي' : 'انتهت المحاولات. الكلمة هي');
+    return;
+  }
   refresh();
   const detail = [...word].map((letter, col) => letter + ' ' + labels[result[col]]).join('، ');
-  status.textContent = word === answer ? 'أحسنت! اكتشفت كلمة «' + answer + '».'
-    : finished ? 'انتهت المحاولات. الكلمة هي «' + answer + '».'
-    : detail + (guesses.length === 2 ? '، فئة الكلمة ' + category + '.' : '.');
-  if (!finished) input.focus();
+  status.textContent = detail + (guesses.length === 2 ? '، فئة الكلمة ' + category + '.' : '.');
+  status.classList.add('sr-only');
+  input.focus();
 });
 
-erase.addEventListener('click', () => {
-  if (finished || !input.value) return;
-  input.value = input.value.slice(0, -1);
+function finishRound(label) {
+  finished = true;
+  input.value = '';
   input.removeAttribute('aria-invalid');
+  const [answer] = answers[answerIndex];
+  byId('result-label').textContent = label;
+  byId('answer').textContent = answer;
+  byId('result').hidden = false;
+  status.textContent = label + ' «' + answer + '».';
+  status.classList.add('sr-only');
+  refresh();
+  byId('reset').focus();
+}
+
+reveal.addEventListener('click', () => {
+  if (finished || revealedIndex >= 0) return;
+  const [answer] = answers[answerIndex];
+  const unknown = [...answer].map((_, index) => index)
+    .filter(index => !guesses.some(guess => guess.result[index] === 'exact'));
+  const choices = unknown.length ? unknown : [...answer].map((_, index) => index);
+  revealedIndex = choices[Math.floor(Math.random() * choices.length)];
+  const clue = 'الخانة ' + numbers.format(revealedIndex + 1) + ' من اليمين: «' + answer[revealedIndex] + '»';
+  byId('hint').textContent = clue;
+  byId('hint').hidden = false;
+  status.textContent = clue;
+  status.classList.add('sr-only');
   refresh();
 });
 
+function ask(action, title, text, button) {
+  confirm.returnValue = 'cancel';
+  byId('confirm-title').textContent = title;
+  byId('confirm-text').textContent = text;
+  const confirmButton = byId('confirm-action');
+  confirmButton.textContent = button;
+  confirmButton.value = action;
+  confirm.showModal();
+}
+
 byId('help').addEventListener('click', () => help.showModal());
+surrender.addEventListener('click', () => {
+  if (!finished) ask('surrender', 'الاستسلام؟', 'ستنتهي الجولة وتظهر الكلمة.', 'استسلمت');
+});
 byId('reset').addEventListener('click', () => {
-  if (guesses.length && !finished) {
-    restart.returnValue = 'cancel';
-    restart.showModal();
+  if (!finished && (guesses.length || input.value || revealedIndex >= 0)) {
+    ask('restart', 'بدء جولة جديدة؟', 'ستُمسح تخمينات هذه الجولة.', 'ابدأ جولة جديدة');
     return;
   }
   newRound();
   input.focus();
 });
-restart.addEventListener('close', () => {
-  if (restart.returnValue !== 'restart') return;
-  newRound();
-  input.focus();
+confirm.addEventListener('close', () => {
+  if (confirm.returnValue === 'surrender') finishRound('الكلمة هي');
+  if (confirm.returnValue === 'restart') {
+    newRound();
+    input.focus();
+  }
 });
+
+help.addEventListener('close', () => {
+  try { sessionStorage.setItem('hazzer-rules-seen', '1'); } catch {}
+  byId('help').focus();
+});
+
+function showIntro() {
+  try {
+    if (sessionStorage.getItem('hazzer-rules-seen')) return;
+  } catch {}
+  help.showModal();
+}
 
 async function loadDictionary() {
   const retry = byId('retry');
   if (retry) retry.remove();
+  status.classList.remove('sr-only');
   status.textContent = 'جارٍ تحميل القاموس…';
   try {
     const response = await fetch('./dictionary.bin.gz');
@@ -186,7 +262,7 @@ async function loadDictionary() {
     const bytes = await new Response(decoded).arrayBuffer();
     if (bytes.byteLength !== Math.ceil(alphabet.length ** 5 / 8)) throw new Error('Invalid dictionary');
     dictionary = new Uint8Array(bytes);
-    status.textContent = 'أدخل تخمينك الأول.';
+    if (!finished && status.textContent === 'جارٍ تحميل القاموس…') status.textContent = '';
     refresh();
   } catch {
     status.textContent = 'تعذّر تحميل القاموس.';
@@ -201,3 +277,5 @@ async function loadDictionary() {
 
 newRound();
 loadDictionary();
+
+showIntro();
