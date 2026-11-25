@@ -1,5 +1,5 @@
-import { answers } from './solutions.mjs?v=7';
-import { alphabet, dictionaryHas, normalize, score, nextHint } from './engine.mjs?v=6';
+import { answers } from './solutions.mjs?v=8';
+import { alphabet, dictionaryHas, normalize, score, nextHint } from './engine.mjs?v=8';
 
 const byId = id => document.getElementById(id);
 const input = byId('guess');
@@ -11,6 +11,8 @@ const help = byId('rules');
 const confirm = byId('confirm');
 const preferences = byId('preferences');
 const keyboardOnly = byId('game-keyboard-only');
+const hintOptions = [...preferences.querySelectorAll('[name="hint-kind"]')];
+const selectedHints = () => hintOptions.filter(option => option.checked).map(option => option.value);
 const symbols = { exact: '✓', present: '↔', absent: '×' };
 const labels = {
   exact: 'في مكانه الصحيح',
@@ -26,6 +28,27 @@ let guesses = [];
 let dictionary;
 let finished = false;
 let hints = [];
+let hasPlayed = false;
+let helpPromptTimer;
+const helpPromptDelay = 12000;
+
+function promptForHelp() {
+  clearTimeout(helpPromptTimer);
+  reveal.classList.remove('help-nudge');
+  if (hasPlayed || finished || reveal.getAttribute('aria-disabled') === 'true'
+      || document.hidden || document.querySelector('dialog[open]')) return;
+  helpPromptTimer = setTimeout(() => {
+    if (!document.hidden && !document.querySelector('dialog[open]')) reveal.classList.add('help-nudge');
+  }, helpPromptDelay);
+}
+
+function markPlayed() {
+  if (hasPlayed) return;
+  hasPlayed = true;
+  promptForHelp();
+}
+
+const availableHint = () => nextHint(answers[answerIndex][0], guesses, hints, selectedHints());
 const keyboardRows = ['ذ', 'ض ص ث ق ف غ ع ه خ ح ج د', 'ش س ي ب ل ا ت ن م ك ط', 'ئ ء ؤ ر لا ى ة و ز ظ'];
 
 for (let row = 0; row < 6; row++) {
@@ -109,16 +132,37 @@ function refresh() {
     });
   });
 
+  const revealed = new Set();
+  const repeated = new Map();
   for (const hint of hints) {
-    if (hint.kind === 'exclude') {
-      for (const letter of hint.letters) states.set(letter, 'absent');
+    if (hint.kind === 'exclude') states.set(hint.letter, 'absent');
+    if (hint.kind === 'letter' || hint.kind === 'position') revealed.add(hint.letter);
+    if (hint.kind === 'repeat' && hint.letter) {
+      revealed.add(hint.letter);
+      repeated.set(hint.letter, hint.count);
     }
   }
 
   for (const [letter, key] of keys) {
     const outcome = states.get(letter);
     paint(key, letter, outcome);
-    key.setAttribute('aria-label', outcome ? letter + '، ' + labels[outcome] : letter);
+    const isRevealed = revealed.has(letter);
+    key.classList.toggle('revealed', isRevealed && outcome !== 'exact');
+    const count = repeated.get(letter);
+    if (count || (isRevealed && outcome !== 'exact')) {
+      let mark = key.querySelector('.mark');
+      if (!mark) {
+        mark = document.createElement('span');
+        mark.className = 'mark';
+        mark.setAttribute('aria-hidden', 'true');
+        key.append(mark);
+      }
+      mark.textContent = count ? '×' + numbers.format(count) : '•';
+    }
+    const state = outcome === 'exact' || (!isRevealed && outcome) ? labels[outcome]
+      : isRevealed ? 'موجود في الحل' : '';
+    const repetition = count ? 'يتكرر ' + numbers.format(count) + ' مرات' : '';
+    key.setAttribute('aria-label', [letter, state, repetition].filter(Boolean).join('، '));
     key.setAttribute('aria-disabled', String(finished));
   }
   input.readOnly = finished || keyboardOnly.checked;
@@ -127,14 +171,8 @@ function refresh() {
   submit.setAttribute('aria-disabled', String(!dictionary || finished));
   byId('attempt').textContent = finished ? 'انتهت الجولة'
     : 'المحاولة ' + numbers.format(guesses.length + 1) + ' من ٦';
-  reveal.setAttribute('aria-disabled', String(finished || !nextHint(answers[answerIndex][0], guesses, hints)));
+  reveal.setAttribute('aria-disabled', String(finished || !availableHint()));
   surrender.setAttribute('aria-disabled', String(finished));
-  const category = byId('category');
-  category.hidden = guesses.length < 2;
-  category.textContent = category.hidden ? '' : 'تلميح المعنى: ' + answers[answerIndex][1];
-  const pattern = byId('pattern');
-  pattern.hidden = guesses.length < 4;
-  pattern.textContent = pattern.hidden ? '' : 'الوزن الصرفي: ' + answers[answerIndex][2];
 }
 
 function newRound() {
@@ -177,7 +215,7 @@ byId('form').addEventListener('submit', event => {
     return;
   }
   input.removeAttribute('aria-invalid');
-  const [answer, meaning, pattern] = answers[answerIndex];
+  const [answer] = answers[answerIndex];
   const result = score(word, answer);
   guesses.push({ word, result });
   input.value = '';
@@ -187,9 +225,7 @@ byId('form').addEventListener('submit', event => {
   }
   refresh();
   const detail = [...word].map((letter, col) => letter + ' ' + labels[result[col]]).join('، ');
-  const clue = guesses.length === 2 ? '، تلميح المعنى: ' + meaning
-    : guesses.length === 4 ? '، الوزن الصرفي: ' + pattern : '';
-  status.textContent = detail + clue + '.';
+  status.textContent = detail + '.';
   status.classList.add('sr-only');
   if (!keyboardOnly.checked) input.focus();
 });
@@ -211,12 +247,19 @@ function finishRound(label) {
 
 reveal.addEventListener('click', () => {
   if (finished) return;
-  const hint = nextHint(answers[answerIndex][0], guesses, hints);
+  const hint = availableHint();
   if (!hint) return;
   hints.push(hint);
 
+  const [, meaning, pattern] = answers[answerIndex];
   let message;
   switch (hint.kind) {
+    case 'meaning':
+      message = 'تلميح المعنى: ' + meaning;
+      break;
+    case 'pattern':
+      message = 'الوزن الصرفي: ' + pattern;
+      break;
     case 'letter':
       message = 'في الحل حرف «' + hint.letter + '».';
       break;
@@ -224,10 +267,12 @@ reveal.addEventListener('click', () => {
       message = 'الخانة ' + numbers.format(hint.index + 1) + ' من اليمين فيها «' + hint.letter + '».';
       break;
     case 'repeat':
-      message = hint.repeats ? 'يوجد حرف مكرر في الحل.' : 'حروف الحل كلها مختلفة.';
+      message = hint.letter ? '«' + hint.letter + '» يتكرر '
+        + (hint.count === 2 ? 'مرتين.' : numbers.format(hint.count) + ' مرات.')
+        : 'حروف الحل كلها مختلفة.';
       break;
     case 'exclude':
-      message = 'خارج الحل: ' + hint.letters.map(letter => '«' + letter + '»').join(' و') + '.';
+      message = '«' + hint.letter + '» ليس ضمن الكلمة.';
       break;
   }
   byId('hint').textContent = message;
@@ -244,7 +289,7 @@ function ask(action, title, text, button) {
   const confirmButton = byId('confirm-action');
   confirmButton.textContent = button;
   confirmButton.value = action;
-  confirm.showModal();
+  openDialog(confirm);
 }
 
 try { keyboardOnly.checked = localStorage.getItem('hazzer-game-keyboard-only') === '1'; } catch {}
@@ -252,9 +297,34 @@ keyboardOnly.addEventListener('change', () => {
   try { localStorage.setItem('hazzer-game-keyboard-only', keyboardOnly.checked ? '1' : '0'); } catch {}
   refresh();
 });
-byId('settings').addEventListener('click', () => preferences.showModal());
+try {
+  const stored = JSON.parse(localStorage.getItem('hazzer-hint-kinds'));
+  if (Array.isArray(stored)) {
+    for (const option of hintOptions) option.checked = stored.includes(option.value);
+  }
+} catch {}
+for (const option of hintOptions) {
+  option.addEventListener('change', () => {
+    try { localStorage.setItem('hazzer-hint-kinds', JSON.stringify(selectedHints())); } catch {}
+    refresh();
+  });
+}
 
-byId('help').addEventListener('click', () => help.showModal());
+function openDialog(dialog) {
+  dialog.showModal();
+  promptForHelp();
+}
+
+document.querySelector('.arena').addEventListener('click', markPlayed);
+document.querySelector('.arena').addEventListener('input', markPlayed);
+document.querySelector('.arena').addEventListener('keydown', event => {
+  if (event.key !== 'Tab' && event.key !== 'Shift') markPlayed();
+});
+document.addEventListener('visibilitychange', promptForHelp);
+for (const dialog of [help, preferences, confirm]) dialog.addEventListener('close', promptForHelp);
+byId('settings').addEventListener('click', () => openDialog(preferences));
+
+byId('help').addEventListener('click', () => openDialog(help));
 surrender.addEventListener('click', () => {
   if (!finished) ask('surrender', 'الاستسلام؟', 'ستنتهي الجولة وتظهر الكلمة.', 'استسلمت');
 });
@@ -326,3 +396,4 @@ newRound();
 loadDictionary();
 
 showIntro();
+promptForHelp();

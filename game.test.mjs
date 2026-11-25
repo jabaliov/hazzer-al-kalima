@@ -34,18 +34,37 @@ test('progressive help is truthful, unique and skips positions already solved', 
     const guesses = [{ word: 'سعادة', result: score('سعادة', answer) }];
     const history = [];
     for (let hint; (hint = nextHint(answer, guesses, history));) {
-      assert.ok(history.length < 25);
+      assert.ok(history.length < 40);
       assert.ok(!history.some(previous => JSON.stringify(previous) === JSON.stringify(hint)));
       if (hint.kind === 'letter') assert.ok(answer.includes(hint.letter));
       if (hint.kind === 'position') {
         assert.equal(answer[hint.index], hint.letter);
         assert.notEqual(guesses[0].result[hint.index], 'exact');
       }
-      if (hint.kind === 'repeat') assert.equal(hint.repeats, new Set(answer).size < 5);
-      if (hint.kind === 'exclude') assert.ok(hint.letters.every(letter => !answer.includes(letter)));
+      if (hint.kind === 'repeat') {
+        if (hint.letter) {
+          assert.ok(hint.count >= 2);
+          assert.equal(hint.count, [...answer].filter(letter => letter === hint.letter).length);
+        } else assert.equal(new Set(answer).size, 5);
+      }
+      if (hint.kind === 'exclude') {
+        assert.equal(hint.letter.length, 1);
+        assert.ok(!answer.includes(hint.letter));
+      }
       history.push(hint);
     }
     assert.ok(history.some(hint => hint.kind === 'repeat'));
     assert.ok(history.some(hint => hint.kind === 'exclude'));
   }
+});
+
+test('help settings filter every clue and weight unlocks on the fourth guess', () => {
+  const answer = 'ساعات';
+  const guess = { word: 'غابات', result: score('غابات', answer) };
+  assert.deepEqual(nextHint(answer, [], []), { kind: 'meaning' });
+  assert.equal(nextHint(answer, Array(3).fill(guess), [], ['pattern']), null);
+  assert.deepEqual(nextHint(answer, Array(4).fill(guess), [], ['pattern']), { kind: 'pattern' });
+  assert.equal(nextHint(answer, [], [], []), null);
+  assert.deepEqual(nextHint(answer, [], [], ['repeat']), { kind: 'repeat', letter: 'ا', count: 2 });
+  assert.equal(nextHint(answer, [], [], ['exclude']).kind, 'exclude');
 });

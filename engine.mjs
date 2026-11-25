@@ -36,12 +36,22 @@ export function dictionaryHas(dictionary, word) {
   return Boolean(dictionary[index >> 3] & (1 << (index & 7)));
 }
 
-// Keep the help sequence deterministic and skip information already on the board.
-export function nextHint(answer, guesses, history) {
+export const hintKinds = ['meaning', 'pattern', 'letter', 'repeat', 'exclude', 'position'];
+const letterHintOrder = ['letter', 'repeat', 'exclude', 'position'];
+
+// Prefer newly available descriptions, then rotate through the remaining help.
+export function nextHint(answer, guesses, history, enabled = hintKinds) {
+  const available = new Set(enabled);
+  const used = new Set(history.map(hint => hint.kind));
+  if (available.has('meaning') && !used.has('meaning')) return { kind: 'meaning' };
+  if (available.has('pattern') && guesses.length >= 4 && !used.has('pattern')) {
+    return { kind: 'pattern' };
+  }
+
   const known = new Set();
   const positioned = new Set();
   const excluded = new Set();
-  for (const {word, result} of guesses) {
+  for (const { word, result } of guesses) {
     result.forEach((outcome, index) => {
       if (outcome === 'exact') positioned.add(index);
       if (outcome !== 'absent') known.add(word[index]);
@@ -49,25 +59,36 @@ export function nextHint(answer, guesses, history) {
     });
   }
   for (const hint of history) {
-    if (hint.kind === 'letter' || hint.kind === 'position') known.add(hint.letter);
+    if (hint.kind === 'letter' || hint.kind === 'position' || (hint.kind === 'repeat' && hint.letter)) {
+      known.add(hint.letter);
+    }
     if (hint.kind === 'position') positioned.add(hint.index);
-    if (hint.kind === 'exclude') hint.letters.forEach(letter => excluded.add(letter));
+    if (hint.kind === 'exclude') excluded.add(hint.letter);
   }
 
-  const letters = [...answer];
   const positions = [0, 4, 2, 1, 3];
-  const newLetter = positions.map(i => letters[i]).find(letter => !known.has(letter));
-  if (history.length === 0 && newLetter) return {kind: 'letter', letter: newLetter};
-
-  if (!history.some(hint => hint.kind === 'repeat')) {
-    return {kind: 'repeat', repeats: new Set(letters).size < letters.length};
-  }
-
+  const letter = positions.map(index => answer[index]).find(value => !known.has(value));
   const index = positions.find(position => !positioned.has(position));
-  const unused = [...alphabet].filter(letter => !answer.includes(letter) && !excluded.has(letter));
-  if (unused.length && (index === undefined || history.at(-1)?.kind !== 'exclude')) {
-    return {kind: 'exclude', letters: unused.slice(0, 2)};
+  const excludedLetter = [...alphabet].find(value => !answer.includes(value) && !excluded.has(value));
+  const counts = new Map();
+  for (const value of answer) counts.set(value, (counts.get(value) ?? 0) + 1);
+  const repeated = [...counts].filter(([value, count]) => count > 1
+    && !history.some(hint => hint.kind === 'repeat' && hint.letter === value));
+  const repeat = repeated.length
+    ? { kind: 'repeat', letter: repeated[0][0], count: repeated[0][1] }
+    : counts.size === answer.length && !used.has('repeat') ? { kind: 'repeat' } : null;
+  const candidates = {
+    letter: letter && { kind: 'letter', letter },
+    repeat,
+    exclude: excludedLetter && { kind: 'exclude', letter: excludedLetter },
+    position: index !== undefined && { kind: 'position', index, letter: answer[index] },
+  };
+
+  const previous = history.findLast(hint => letterHintOrder.includes(hint.kind));
+  const start = previous ? letterHintOrder.indexOf(previous.kind) + 1 : 0;
+  for (let offset = 0; offset < letterHintOrder.length; offset++) {
+    const kind = letterHintOrder[(start + offset) % letterHintOrder.length];
+    if (available.has(kind) && candidates[kind]) return candidates[kind];
   }
-  if (index !== undefined) return {kind: 'position', index, letter: letters[index]};
   return null;
 }
