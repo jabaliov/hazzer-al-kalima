@@ -8,7 +8,7 @@
 <title>حزر الكلمة | لعبة تخمين عربية</title>
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="./style.css?v=6">
-<script type="module" src="./game.mjs?v=6"></script>
+<script type="module" src="./game.mjs?v=7"></script>
 </head>
 <body>
 <a class="skip" href="#guess">انتقل إلى إدخال التخمين</a>
@@ -21,7 +21,7 @@
 </header>
 <main class="arena">
   <section class="playboard" aria-label="لوحة اللعب">
-    <div class="board-head"><span id="attempt"></span><span id="category" class="category" hidden></span></div>
+    <div class="board-head"><span id="attempt"></span><span id="category" class="category" hidden></span><span id="pattern" class="category" hidden></span></div>
     <ol id="board" class="board" role="list" aria-label="محاولات التخمين"></ol>
     <p id="hint" class="hint" hidden></p>
     <div id="result" class="result" hidden>
@@ -62,7 +62,7 @@
   </ul>
   <p><strong>الحرف ممكن يتكرر.</strong> مثل الألف في «ساعات». إذا خمّنت الحرف أكثر من عدد مرات ظهوره في الحل، تظهر النسخ الزائدة بالأحمر.</p>
   <ul class="instructions">
-    <li><strong>تلميح المعنى:</strong> بعد تخمينين مقبولين يظهر وصف قصير للكلمة.</li>
+    <li><strong>تلميح المعنى:</strong> بعد تخمينين مقبولين يظهر وصف قصير للكلمة. بعد التخمين الرابع المقبول يظهر وزنها الصرفي، مثل «تفعيل».</li>
     <li><strong>ساعدني أكثر:</strong> كل ضغطة تعطيك معلومة جديدة عن الحل ما دامت هناك مساعدات متاحة. يظهر آخر تلميح تحت اللوحة، وتظل الحروف المستبعَدة حمراء في الكيبورد.</li>
     <li><strong>نهاية الجولة:</strong> يظهر الحل بعد الفوز أو الاستسلام أو نفاد المحاولات. اضغط «ابدأ الجولة التالية» للعب بكلمة جديدة.</li>
     <li><strong>كيبورد الجوال:</strong> من «الإعدادات»، فعّل «كيبورد اللعبة فقط» لإيقاف فتح كيبورد الجوال.</li>

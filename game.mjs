@@ -1,4 +1,4 @@
-import { answers } from './solutions.mjs?v=6';
+import { answers } from './solutions.mjs?v=7';
 import { alphabet, dictionaryHas, normalize, score, nextHint } from './engine.mjs?v=6';
 
 const byId = id => document.getElementById(id);
@@ -132,6 +132,9 @@ function refresh() {
   const category = byId('category');
   category.hidden = guesses.length < 2;
   category.textContent = category.hidden ? '' : 'تلميح المعنى: ' + answers[answerIndex][1];
+  const pattern = byId('pattern');
+  pattern.hidden = guesses.length < 4;
+  pattern.textContent = pattern.hidden ? '' : 'الوزن الصرفي: ' + answers[answerIndex][2];
 }
 
 function newRound() {
@@ -174,7 +177,7 @@ byId('form').addEventListener('submit', event => {
     return;
   }
   input.removeAttribute('aria-invalid');
-  const [answer, meaning] = answers[answerIndex];
+  const [answer, meaning, pattern] = answers[answerIndex];
   const result = score(word, answer);
   guesses.push({ word, result });
   input.value = '';
@@ -184,7 +187,9 @@ byId('form').addEventListener('submit', event => {
   }
   refresh();
   const detail = [...word].map((letter, col) => letter + ' ' + labels[result[col]]).join('، ');
-  status.textContent = detail + (guesses.length === 2 ? '، تلميح المعنى: ' + meaning + '.' : '.');
+  const clue = guesses.length === 2 ? '، تلميح المعنى: ' + meaning
+    : guesses.length === 4 ? '، الوزن الصرفي: ' + pattern : '';
+  status.textContent = detail + clue + '.';
   status.classList.add('sr-only');
   if (!keyboardOnly.checked) input.focus();
 });

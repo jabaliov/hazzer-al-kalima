@@ -17,14 +17,14 @@ test('exact matches consume letters before misplaced matches', () => {
   assert.deepEqual(score('غابات', 'غابات'), Array(5).fill('exact'));
 });
 
-test('preserves all accepted guesses and 200 unique categorized answers', () => {
+test('preserves all accepted guesses and 200 unique answers with clues and weights', () => {
   const dictionary = gunzipSync(readFileSync(new URL('./dictionary.bin.gz', import.meta.url)));
   assert.equal(dictionary.length, Math.ceil(alphabet.length ** 5 / 8));
   const bitCount = Array.from({ length: 256 }, (_, n) => n.toString(2).replaceAll('0', '').length);
   const count = dictionary.reduce((sum, byte) => sum + bitCount[byte], 0);
   assert.equal(count, 540057);
   assert.equal(new Set(answers.map(([word]) => word)).size, 200);
-  assert.ok(answers.every(([word, category]) => category && dictionaryHas(dictionary, word)));
+  assert.ok(answers.every(([word, clue, pattern]) => clue && pattern && dictionaryHas(dictionary, word)));
   assert.equal(dictionaryHas(dictionary, 'غغااا'), false);
 });
 
