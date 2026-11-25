@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { gunzipSync } from 'node:zlib';
-import { alphabet, dictionaryHas, normalize, score } from './engine.mjs';
+import { alphabet, dictionaryHas, normalize, score, nextHint } from './engine.mjs';
 import { answers } from './solutions.mjs';
 
 test('normalizes Arabic alef, strips marks, and limits an entry to five letters', () => {
@@ -26,4 +26,26 @@ test('preserves all accepted guesses and 200 unique categorized answers', () => 
   assert.equal(new Set(answers.map(([word]) => word)).size, 200);
   assert.ok(answers.every(([word, category]) => category && dictionaryHas(dictionary, word)));
   assert.equal(dictionaryHas(dictionary, 'غغااا'), false);
+});
+
+test('progressive help is truthful, unique and skips positions already solved', () => {
+  for (const [answer, description] of answers) {
+    assert.ok(description && !description.includes(answer));
+    const guesses = [{ word: 'سعادة', result: score('سعادة', answer) }];
+    const history = [];
+    for (let hint; (hint = nextHint(answer, guesses, history));) {
+      assert.ok(history.length < 25);
+      assert.ok(!history.some(previous => JSON.stringify(previous) === JSON.stringify(hint)));
+      if (hint.kind === 'letter') assert.ok(answer.includes(hint.letter));
+      if (hint.kind === 'position') {
+        assert.equal(answer[hint.index], hint.letter);
+        assert.notEqual(guesses[0].result[hint.index], 'exact');
+      }
+      if (hint.kind === 'repeat') assert.equal(hint.repeats, new Set(answer).size < 5);
+      if (hint.kind === 'exclude') assert.ok(hint.letters.every(letter => !answer.includes(letter)));
+      history.push(hint);
+    }
+    assert.ok(history.some(hint => hint.kind === 'repeat'));
+    assert.ok(history.some(hint => hint.kind === 'exclude'));
+  }
 });

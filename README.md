@@ -4,7 +4,7 @@
 
 [العب الآن](https://jabaliov.github.io/hazzer-al-kalima/) · [نسخة Scratch الأصلية](https://scratch.mit.edu/projects/1444047731/)
 
-لعبة تخمين عربية من خمس خانات وست محاولات. تظهر فئة الكلمة بعد محاولتين. يمكن كشف حرف واحد وموقعه في كل جولة، ويظهر الحل عند الاستسلام أو نفاد المحاولات. ترتيب الحروف يحاكي Arabic (101) في Windows، وتُحسب الحروف المكررة بحسب عدد مرات ظهورها في الحل. تضم اللعبة ٢٠٠ حل مصنّف وقاموسًا من ٥٤٠٬٠٥٧ تخمينًا مقبولًا.
+لعبة تخمين عربية من خمس خانات وست محاولات. يظهر تلميح خاص بمعنى الكلمة بعد محاولتين. يعطي زر «ساعدني أكثر» معلومات متدرجة عن حروف الحل ومواقعها والحروف المستبعَدة، ويظهر الحل عند الاستسلام أو نفاد المحاولات. ترتيب الحروف يحاكي Arabic (101) في Windows، وتُحسب الحروف المكررة بحسب عدد مرات ظهورها في الحل. تضم اللعبة ٢٠٠ حل مصنّف وقاموسًا من ٥٤٠٬٠٥٧ تخمينًا مقبولًا.
 
 ## التشغيل محليًا
 
@@ -31,4 +31,4 @@ node --test game.test.mjs
 
 ---
 
-An Arabic word puzzle with 200 categorized answers, six attempts, and 540,057 accepted guesses. Built as a static, responsive site with no runtime frameworks.
+An Arabic word puzzle with 200 answers with individual clues, six attempts, and 540,057 accepted guesses. Built as a static, responsive site with no runtime frameworks.

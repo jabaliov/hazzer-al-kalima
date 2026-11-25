@@ -1,5 +1,5 @@
-import { answers } from './solutions.mjs';
-import { alphabet, dictionaryHas, normalize, score } from './engine.mjs';
+import { answers } from './solutions.mjs?v=6';
+import { alphabet, dictionaryHas, normalize, score, nextHint } from './engine.mjs?v=6';
 
 const byId = id => document.getElementById(id);
 const input = byId('guess');
@@ -25,7 +25,7 @@ let answerIndex = -1;
 let guesses = [];
 let dictionary;
 let finished = false;
-let revealedIndex = -1;
+let hints = [];
 const keyboardRows = ['ذ', 'ض ص ث ق ف غ ع ه خ ح ج د', 'ش س ي ب ل ا ت ن م ك ط', 'ئ ء ؤ ر لا ى ة و ز ظ'];
 
 for (let row = 0; row < 6; row++) {
@@ -109,6 +109,12 @@ function refresh() {
     });
   });
 
+  for (const hint of hints) {
+    if (hint.kind === 'exclude') {
+      for (const letter of hint.letters) states.set(letter, 'absent');
+    }
+  }
+
   for (const [letter, key] of keys) {
     const outcome = states.get(letter);
     paint(key, letter, outcome);
@@ -121,11 +127,11 @@ function refresh() {
   submit.setAttribute('aria-disabled', String(!dictionary || finished));
   byId('attempt').textContent = finished ? 'انتهت الجولة'
     : 'المحاولة ' + numbers.format(guesses.length + 1) + ' من ٦';
-  reveal.setAttribute('aria-disabled', String(finished || revealedIndex >= 0));
+  reveal.setAttribute('aria-disabled', String(finished || !nextHint(answers[answerIndex][0], guesses, hints)));
   surrender.setAttribute('aria-disabled', String(finished));
   const category = byId('category');
   category.hidden = guesses.length < 2;
-  category.textContent = category.hidden ? '' : 'تلميح الفئة: ' + answers[answerIndex][1];
+  category.textContent = category.hidden ? '' : 'تلميح المعنى: ' + answers[answerIndex][1];
 }
 
 function newRound() {
@@ -135,7 +141,7 @@ function newRound() {
   guesses = [];
   input.value = '';
   finished = false;
-  revealedIndex = -1;
+  hints = [];
   byId('hint').hidden = true;
   byId('result').hidden = true;
   byId('reset').hidden = false;
@@ -168,7 +174,7 @@ byId('form').addEventListener('submit', event => {
     return;
   }
   input.removeAttribute('aria-invalid');
-  const [answer, category] = answers[answerIndex];
+  const [answer, meaning] = answers[answerIndex];
   const result = score(word, answer);
   guesses.push({ word, result });
   input.value = '';
@@ -178,7 +184,7 @@ byId('form').addEventListener('submit', event => {
   }
   refresh();
   const detail = [...word].map((letter, col) => letter + ' ' + labels[result[col]]).join('، ');
-  status.textContent = detail + (guesses.length === 2 ? '، فئة الكلمة ' + category + '.' : '.');
+  status.textContent = detail + (guesses.length === 2 ? '، تلميح المعنى: ' + meaning + '.' : '.');
   status.classList.add('sr-only');
   if (!keyboardOnly.checked) input.focus();
 });
@@ -199,16 +205,29 @@ function finishRound(label) {
 }
 
 reveal.addEventListener('click', () => {
-  if (finished || revealedIndex >= 0) return;
-  const [answer] = answers[answerIndex];
-  const unknown = [...answer].map((_, index) => index)
-    .filter(index => !guesses.some(guess => guess.result[index] === 'exact'));
-  const choices = unknown.length ? unknown : [...answer].map((_, index) => index);
-  revealedIndex = choices[Math.floor(Math.random() * choices.length)];
-  const clue = 'الحرف المكشوف — الخانة ' + numbers.format(revealedIndex + 1) + ' من اليمين: «' + answer[revealedIndex] + '»';
-  byId('hint').textContent = clue;
+  if (finished) return;
+  const hint = nextHint(answers[answerIndex][0], guesses, hints);
+  if (!hint) return;
+  hints.push(hint);
+
+  let message;
+  switch (hint.kind) {
+    case 'letter':
+      message = 'في الحل حرف «' + hint.letter + '».';
+      break;
+    case 'position':
+      message = 'الخانة ' + numbers.format(hint.index + 1) + ' من اليمين فيها «' + hint.letter + '».';
+      break;
+    case 'repeat':
+      message = hint.repeats ? 'يوجد حرف مكرر في الحل.' : 'حروف الحل كلها مختلفة.';
+      break;
+    case 'exclude':
+      message = 'خارج الحل: ' + hint.letters.map(letter => '«' + letter + '»').join(' و') + '.';
+      break;
+  }
+  byId('hint').textContent = message;
   byId('hint').hidden = false;
-  status.textContent = clue;
+  status.textContent = message;
   status.classList.add('sr-only');
   refresh();
 });
@@ -242,7 +261,7 @@ byId('next-round').addEventListener('click', () => {
   else input.focus();
 });
 byId('reset').addEventListener('click', () => {
-  if (!finished && (guesses.length || input.value || revealedIndex >= 0)) {
+  if (!finished && (guesses.length || input.value || hints.length)) {
     ask('restart', 'بدء جولة جديدة؟', 'ستُمسح تخمينات هذه الجولة.', 'ابدأ جولة جديدة');
     return;
   }

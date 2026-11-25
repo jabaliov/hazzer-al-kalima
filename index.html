@@ -7,8 +7,8 @@
 <meta name="description" content="حزر الكلمة، لعبة تخمين عربية. اكتشف الكلمة في ست محاولات والعب جولة جديدة متى شئت.">
 <title>حزر الكلمة | لعبة تخمين عربية</title>
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="./style.css?v=5">
-<script type="module" src="./game.mjs?v=5"></script>
+<link rel="stylesheet" href="./style.css?v=6">
+<script type="module" src="./game.mjs?v=6"></script>
 </head>
 <body>
 <a class="skip" href="#guess">انتقل إلى إدخال التخمين</a>
@@ -40,7 +40,7 @@
     <p id="status" role="status"></p>
     <div id="keys" class="keyboard" dir="ltr" role="group" aria-label="لوحة المفاتيح العربية"></div>
     <div class="round-actions">
-      <button id="reveal" class="quiet" type="button">اكشف حرفًا من الحل</button>
+      <button id="reveal" class="quiet" type="button">ساعدني أكثر</button>
       <button id="surrender" class="quiet danger" type="button">استسلمت</button>
       <button id="reset" class="quiet new-round" type="button">جولة جديدة</button>
     </div>
@@ -62,8 +62,8 @@
   </ul>
   <p><strong>الحرف ممكن يتكرر.</strong> مثل الألف في «ساعات». إذا خمّنت الحرف أكثر من عدد مرات ظهوره في الحل، تظهر النسخ الزائدة بالأحمر.</p>
   <ul class="instructions">
-    <li><strong>تلميح الفئة:</strong> بعد محاولتين صحيحتين من القاموس يظهر نوع الكلمة، مثل «الطبيعة».</li>
-    <li><strong>اكشف حرفًا من الحل:</strong> يوضح لك حرفًا ومكانه من اليمين. تقدر تستخدمه مرة واحدة في كل جولة.</li>
+    <li><strong>تلميح المعنى:</strong> بعد تخمينين مقبولين يظهر وصف قصير للكلمة.</li>
+    <li><strong>ساعدني أكثر:</strong> كل ضغطة تعطيك معلومة جديدة عن الحل ما دامت هناك مساعدات متاحة. يظهر آخر تلميح تحت اللوحة، وتظل الحروف المستبعَدة حمراء في الكيبورد.</li>
     <li><strong>نهاية الجولة:</strong> يظهر الحل بعد الفوز أو الاستسلام أو نفاد المحاولات. اضغط «ابدأ الجولة التالية» للعب بكلمة جديدة.</li>
     <li><strong>كيبورد الجوال:</strong> من «الإعدادات»، فعّل «كيبورد اللعبة فقط» لإيقاف فتح كيبورد الجوال.</li>
   </ul>
